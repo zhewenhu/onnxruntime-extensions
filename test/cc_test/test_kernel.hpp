@@ -33,17 +33,3 @@ struct CustomOpTwo : Ort::CustomOpBase<CustomOpTwo, KernelTwo> {
   size_t GetOutputTypeCount() const;
   ONNXTensorElementDataType GetOutputType(size_t index) const;
 };
-
-struct KernelNegPos : BaseKernel {
-  KernelNegPos(OrtApi api);
-  void Compute(OrtKernelContext* context);
-};
-
-struct CustomOpNegPos : Ort::CustomOpBase<CustomOpNegPos, KernelNegPos> {
-  void* CreateKernel(OrtApi api, const OrtKernelInfo* info) const;
-  const char* GetName() const;
-  size_t GetInputTypeCount() const;
-  ONNXTensorElementDataType GetInputType(size_t index) const;
-  size_t GetOutputTypeCount() const;
-  ONNXTensorElementDataType GetOutputType(size_t index) const;
-};

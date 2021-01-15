@@ -17,3 +17,7 @@ const OrtCustomOp* FetchPyCustomOps(size_t& count);
 bool EnablePyCustomOps(bool enable=true);
 
 #endif
+
+// A helper API to support test kernels.
+// Must be invoked before RegisterCustomOps.
+bool AddExternalCustomOp(const OrtCustomOp* c_op);
