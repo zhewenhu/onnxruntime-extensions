@@ -7,15 +7,36 @@
 #include "onnxruntime_cxx_api.h"
 #undef ORT_API_MANUAL_INIT
 
-const char c_OpDomain[] = "ai.onnx.contrib";
+
+#if defined(ENABLE_TOKENIZER)
+const OrtCustomOp** LoadTokenizerSchemaList();
+#endif  // ENABLE_TEXT_DOMAIN
+
 
 #if defined(PYTHON_OP_SUPPORT)
-
 const OrtCustomOp* FetchPyCustomOps(size_t& count);
 bool EnablePyCustomOps(bool enable=true);
-
 #endif
 
 // A helper API to support test kernels.
 // Must be invoked before RegisterCustomOps.
-bool AddExternalCustomOp(const OrtCustomOp* c_op);
+extern "C" bool AddExternalCustomOp(const OrtCustomOp* c_op);
+
+const char c_OpDomain[] = "ai.onnx.contrib";
+
+struct BaseKernel {
+  BaseKernel(OrtApi api) : api_(api), ort_(api_) {}
+
+ protected:
+  OrtApi api_;  // keep a copy of the struct, whose ref is used in the ort_
+  Ort::CustomOpApi ort_;
+};
+
+struct OrtTensorDimensions : std::vector<int64_t> {
+  OrtTensorDimensions(Ort::CustomOpApi& ort, const OrtValue* value) {
+    OrtTensorTypeAndShapeInfo* info = ort.GetTensorTypeAndShape(value);
+    std::vector<int64_t>::operator=(ort.GetTensorShape(info));
+    ort.ReleaseTensorTypeAndShapeInfo(info);
+  }
+  const std::vector<int64_t>& GetDims() const { return *this; }
+};

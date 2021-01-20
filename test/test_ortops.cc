@@ -6,6 +6,8 @@
 #include "test_utils.h"
 #include "ocos.h"
 
+#include "cc_test/test_kernel.hpp"
+
 
 struct Input {
   const char* name = nullptr;
@@ -13,13 +15,11 @@ struct Input {
   std::vector<float> values;
 };
 
-auto ort_env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_VERBOSE, "Default");
-
 void RunSession(Ort::Session& session_object,
                 const std::vector<Input>& inputs,
                 const char* output_name,
                 const std::vector<int64_t>& dims_y,
-                const std::vector<float>& values_y) {
+                const std::vector<int32_t>& values_y) {
 
   std::vector<Ort::Value> ort_inputs;
   std::vector<const char*> input_names;
@@ -42,21 +42,22 @@ void RunSession(Ort::Session& session_object,
   size_t total_len = type_info.GetElementCount();
   ASSERT_EQ(values_y.size(), total_len);
 
-  float* f = output_tensor->GetTensorMutableData<float>();
+  int32_t* f = output_tensor->GetTensorMutableData<int32_t>();
   for (size_t i = 0; i != total_len; ++i) {
     ASSERT_EQ(values_y[i], f[i]);
   }
 }
 
-void TestInference(Ort::Env& env, const char* model_uri,
+void TestInference(Ort::Env& env, const ORTCHAR_T* model_uri,
                    const std::vector<Input>& inputs,
                    const char* output_name,
                    const std::vector<int64_t>& expected_dims_y,
-                   const std::vector<float>& expected_values_y,
+                   const std::vector<int32_t>& expected_values_y,
                    const char* custom_op_library_filename) {
   Ort::SessionOptions session_options;
+  void* handle = nullptr;
   if (custom_op_library_filename) {
-    Ort::ThrowOnError(Ort::GetApi().RegisterCustomOpsLibrary((OrtSessionOptions*)session_options, custom_op_library_filename, nullptr));
+    Ort::ThrowOnError(Ort::GetApi().RegisterCustomOpsLibrary((OrtSessionOptions*)session_options, custom_op_library_filename, &handle));
   }
 
   // if session creation passes, model loads fine
@@ -70,27 +71,44 @@ void TestInference(Ort::Env& env, const char* model_uri,
               expected_values_y);
 }
 
+static CustomOpOne op_1st;
+static CustomOpTwo op_2nd;
 
 TEST(utils, test_ort_case) {
   
+  auto ort_env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_VERBOSE, "Default");
   std::cout << "Running custom op inference" << std::endl;
 
-  std::vector<Input> inputs(1);
-  Input& input = inputs[0];
-  input.name = "X";
-  input.dims = {3, 2};
-  input.values = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+  std::vector<Input> inputs(2);
+  inputs[0].name = "input_1";
+  inputs[0].dims = {3, 5};
+  inputs[0].values = {1.1f, 2.2f, 3.3f, 4.4f, 5.5f,
+                      6.6f, 7.7f, 8.8f, 9.9f, 10.0f,
+                      11.1f, 12.2f, 13.3f, 14.4f, 15.5f};
+  inputs[1].name = "input_2";
+  inputs[1].dims = {3, 5};
+  inputs[1].values = {15.5f, 14.4f, 13.3f, 12.2f, 11.1f,
+                      10.0f, 9.9f, 8.8f, 7.7f, 6.6f,
+                      5.5f, 4.4f, 3.3f, 2.2f, 1.1f};
 
   // prepare expected inputs and outputs
-  std::vector<int64_t> expected_dims_y = {3, 2};
-  std::vector<float> expected_values_y = {2.0f, 4.0f, 6.0f, 8.0f, 10.0f, 12.0f};
+  std::vector<int64_t> expected_dims_y = {3, 5};
+  std::vector<int32_t> expected_values_y =
+      {17, 17, 17, 17, 17,
+       17, 18, 18, 18, 17,
+       17, 17, 17, 17, 17};
 
 #if defined(_WIN32)
-  const char lib_name[] = "custom_op_library.dll";
+  const char lib_name[] = "ortcustomops.dll";
+  const ORTCHAR_T model_path[] = L"test\\data\\custom_op_test.onnx";
 #elif defined(__APPLE__)
-  const char lib_name[] = "libcustom_op_library.dylib";
+  const char lib_name[] = "libortcustomops.dylib";
+  const ORTCHAR_T model_path[] = "test/data/custom_op_test.onnx";
 #else
-  const char lib_name[] = "./libcustom_op_library.so";
+  const char lib_name[] = "./libortcustomops.so";
+  const ORTCHAR_T model_path[] = "test/data/custom_op_test.onnx";
 #endif
-  TestInference(*ort_env, "test/data/custom_op_test.onnx", inputs, "Y", expected_dims_y, expected_values_y, lib_name);
+  AddExternalCustomOp(&op_1st);
+  AddExternalCustomOp(&op_2nd);
+  TestInference(*ort_env, model_path, inputs, "output", expected_dims_y, expected_values_y, lib_name);
 }

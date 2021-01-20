@@ -67,8 +67,7 @@ class ExternalCustomOps
 };
 
 
-bool AddExternalCustomOp(const OrtCustomOp* c_op)
-{
+extern "C" bool AddExternalCustomOp(const OrtCustomOp* c_op) {
   ExternalCustomOps::instance().Add(c_op);
   return true;
 }
@@ -127,6 +126,7 @@ extern "C" OrtStatus* ORT_API_CALL RegisterCustomOps(OrtSessionOptions* options,
       if (auto status = ortApi->CustomOpDomain_Add(domain, e_ops)){
         return status;
       }
+      e_ops = ExternalCustomOps::instance().GetNextOp(idx);
     }
   }
 
