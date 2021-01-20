@@ -39,6 +39,9 @@ OrtCustomOp* operator_lists[] = {
 class ExternalCustomOps
 {
  public:
+  ExternalCustomOps(){
+  }
+
   static ExternalCustomOps& instance() {
     static ExternalCustomOps g_instance;
     return g_instance;

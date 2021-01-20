@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#include "onnxruntime_cxx_api.h"
 #include "gtest/gtest.h"
 #include "test_utils.h"
 #include "ocos.h"
@@ -12,7 +13,7 @@ struct Input {
   std::vector<float> values;
 };
 
-extern std::unique_ptr<Ort::Env> ort_env;
+auto ort_env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_VERBOSE, "Default");
 
 void RunSession(Ort::Session& session_object,
                 const std::vector<Input>& inputs,
@@ -52,8 +53,6 @@ void TestInference(Ort::Env& env, const char* model_uri,
                    const char* output_name,
                    const std::vector<int64_t>& expected_dims_y,
                    const std::vector<float>& expected_values_y,
-                   int provider_type,
-                   OrtCustomOpDomain* custom_op_domain_ptr,
                    const char* custom_op_library_filename) {
   Ort::SessionOptions session_options;
   if (custom_op_library_filename) {
@@ -86,5 +85,12 @@ TEST(utils, test_ort_case) {
   std::vector<int64_t> expected_dims_y = {3, 2};
   std::vector<float> expected_values_y = {2.0f, 4.0f, 6.0f, 8.0f, 10.0f, 12.0f};
 
-  TestInference(*ort_env, "test/data/custom_op_test.onnx", inputs, "Y", expected_dims_y, expected_values_y, 0);
+#if defined(_WIN32)
+  const char lib_name[] = "custom_op_library.dll";
+#elif defined(__APPLE__)
+  const char lib_name[] = "libcustom_op_library.dylib";
+#else
+  const char lib_name[] = "./libcustom_op_library.so";
+#endif
+  TestInference(*ort_env, "test/data/custom_op_test.onnx", inputs, "Y", expected_dims_y, expected_values_y, lib_name);
 }

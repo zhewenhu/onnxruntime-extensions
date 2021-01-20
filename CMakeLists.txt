@@ -22,6 +22,11 @@ option(CC_OPTIMIZE "Allow compiler optimizations, Set to OFF to disable" ON)
 option(ENABLE_PYTHON "Enable Python component building" OFF)
 option(ENABLE_TOKENIZER "Enable the tokenizer building" ON)
 
+find_library(ONNXRUNTIME onnxruntime HINTS "${ONNXRUNTIME_LIB_DIR}")
+if ((NOT ENABLE_PYTHON) AND (NOT ONNXRUNTIME))
+  message(FATAL_ERROR "Cannot find onnxruntime in the default library paths, please specify the ONNXRUNTIME_LIB_DIR.")
+endif()
+
 if(NOT CC_OPTIMIZE)
   message("!!!THE COMPILER OPTIMIZATION HAS BEEN DISABLED, DEBUG-ONLY!!!")
   string(REGEX REPLACE "([\-\/]O[123])" "" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
@@ -154,6 +159,10 @@ endif()
 include(googletest)
 file(GLOB TEST_SRC "${PROJECT_SOURCE_DIR}/test/test*.cc")
 add_executable(ortcustomops_test ${TEST_SRC})
-target_link_libraries(ortcustomops_test gtest_main ortcustomops ${external_libraries})
+
+if (ONNXRUNTIME_LIB_DIR)
+  target_link_directories(ortcustomops_test PRIVATE ${ONNXRUNTIME_LIB_DIR})
+endif()
+target_link_libraries(ortcustomops_test gtest_main onnxruntime ortcustomops ${external_libraries})
 
 add_test(NAME ortcustomops_test COMMAND test)
