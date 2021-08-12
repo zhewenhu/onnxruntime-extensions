@@ -66,6 +66,7 @@ def multithreshold_elementwise(v, thresholds, out_scale=None, out_bias=None):
         out_bias = 0.0
     return out_scale * ret.reshape(v.shape) + out_bias
 
+
 inputs = np.ndarray(
     shape=(6, 3, 2, 2),
     buffer=np.array(
