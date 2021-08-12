@@ -60,13 +60,15 @@ void *compute_NCHW(const OrtTensorDimensions &dim_v, const OrtTensorDimensions &
             int64_t elem_base_index = b*num_channel*num_img_elem + t*num_img_elem;
             // iterate over image elements on which the thresholds will be applied
             for (int elem = 0; elem < num_img_elem; ++elem) {
+                double temp = 0.0;
                 // iterate over the different thresholds for one channel
                 for (int a = 0; a < num_act; ++a) {
                     if (val[elem_base_index + elem] >= channel_thresh[a])
-                        result[elem_base_index + elem]++;
+                        temp++;
                     else
                         break;
                 }
+                result[elem_base_index + elem] = temp;
             }
         }
     }
@@ -98,12 +100,14 @@ void *compute_NHWC_NC(const OrtTensorDimensions &dim_v, const OrtTensorDimension
     for (int t = 0; t < num_channel; ++t) {
         auto *channel_thresh = is_global_threshold ? &thresh[0] : &thresh[t*num_act];
         for (int64_t i = 0; i < num_all; i += num_channel) {
+            double temp = 0.0;
             for (int a = 0; a < num_act; ++a) {
                 if (val[i + t] >= channel_thresh[a])
-                    result[i + t]++;
+                    temp++;
                 else
                     break;
             }
+            result[i + t] = temp;
         }
     }
 
