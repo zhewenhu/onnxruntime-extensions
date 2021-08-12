@@ -66,18 +66,6 @@ def multithreshold_elementwise(v, thresholds, out_scale=None, out_bias=None):
         out_bias = 0.0
     return out_scale * ret.reshape(v.shape) + out_bias
 
-
-so = ort.SessionOptions()
-so.register_custom_ops_library(get_library_path())
-
-sess = ort.InferenceSession("test.onnx", so)
-
-inname = [input.name for input in sess.get_inputs()]
-outname = [output.name for output in sess.get_outputs()]
-
-print("Inputs name:", inname)
-print("Output name:", outname)
-
 inputs = np.ndarray(
     shape=(6, 3, 2, 2),
     buffer=np.array(
@@ -267,6 +255,17 @@ outputs = np.ndarray(
     ),
 )
 
+so = ort.SessionOptions()
+so.register_custom_ops_library(get_library_path())
+
+sess = ort.InferenceSession("test.onnx", so)
+
+inname = [input.name for input in sess.get_inputs()]
+outname = [output.name for output in sess.get_outputs()]
+
+print("Inputs name:", inname)
+print("Output name:", outname)
+
 results = sess.run(outname, {inname[0]: inputs, inname[1]: thresholds})[0]
 # assert (results == outputs).all()
 
@@ -280,5 +279,6 @@ thresholds = (np.array([[1, 2, 3, 4, 5, 6, 7], [2, 3, 4, 5, 6, 7, 8], [3, 4, 5, 
 
 ort_results = sess.run(outname, {inname[0]: inputs, inname[1]: thresholds})[0]
 py_results = multithreshold_elementwise(inputs, thresholds)
+py_results_scaled = 2.0 * py_results - 1.0
 
-assert (ort_results == py_results).all()
+assert (ort_results == py_results_scaled).all()
