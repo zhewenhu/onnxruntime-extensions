@@ -21,8 +21,8 @@ node_def = helper.make_node(
         ["results"],
         domain="ai.onnx.contrib",
         out_dtype="",
-        out_scale=1.0,
-        out_bias=0.0,
+        out_scale=2.0,
+        out_bias=-1.0,
         data_layout="NCHW",
     )
 

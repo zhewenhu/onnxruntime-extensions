@@ -268,7 +268,10 @@ outputs = np.ndarray(
 )
 
 results = sess.run(outname, {inname[0]: inputs, inname[1]: thresholds})[0]
-assert (results == outputs).all()
+# assert (results == outputs).all()
+
+outputs_scaled = 2.0 * outputs - 1.0
+assert (results == outputs_scaled).all()
 
 # performance and random test
 np.random.seed(0)
