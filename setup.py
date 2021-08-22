@@ -90,8 +90,8 @@ class BuildCMakeExt(_build_ext):
             cmake_args += ['-DCC_OPTIMIZE=OFF']
 
         build_args = [
-            '--config', config,
-            '--parallel'
+            '--config', config#,
+            #'--parallel'
         ]
 
         with chdir(build_temp):
