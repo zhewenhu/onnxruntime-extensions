@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "ocos.h"
 
+// static const char* c_OpDomain = "finn.custom_op.general";
+
 struct MultithresholdKernel {
     MultithresholdKernel(Ort::CustomOpApi ort, const OrtKernelInfo* info) : ort_(ort) {
         out_dtype_ = ort_.KernelInfoGetAttribute<std::string>(info, "out_dtype");
@@ -30,16 +32,16 @@ struct MultithresholdOp : Ort::CustomOpBase<MultithresholdOp, MultithresholdKern
     size_t GetInputTypeCount() const { return 2; };
     ONNXTensorElementDataType GetInputType(size_t /*index*/) const {
         // Both the inputs need to be necessarily of float type
-        return ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE;
+        return ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
     };
 
     size_t GetOutputTypeCount() const { return 1; };
     ONNXTensorElementDataType GetOutputType(size_t /*index*/) const {
-        return ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE;
+        return ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
     };
 };
 
-void *compute_NCHW(const OrtTensorDimensions &dim_v, const OrtTensorDimensions &dim_thresh, const double* val, const double* thresh, double *result) {
+void *compute_NCHW(const OrtTensorDimensions &dim_v, const OrtTensorDimensions &dim_thresh, const float* val, const float* thresh, float *result) {
     // save the shape sizes
     const int64_t num_batch = dim_v[0];
     const int64_t num_channel = dim_v[1];
@@ -75,7 +77,7 @@ void *compute_NCHW(const OrtTensorDimensions &dim_v, const OrtTensorDimensions &
     return nullptr;
 }
 
-void *compute_NHWC_NC(const OrtTensorDimensions &dim_v, const OrtTensorDimensions &dim_thresh, const double* val, const double* thresh, double *result) {
+void *compute_NHWC_NC(const OrtTensorDimensions &dim_v, const OrtTensorDimensions &dim_thresh, const float* val, const float* thresh, float *result) {
     // save the shape sizes
     const int64_t num_batch = dim_v[0];
     const int64_t num_channel = dim_v.back();
@@ -119,13 +121,13 @@ void MultithresholdKernel::Compute(OrtKernelContext* context) {
     const OrtValue* input_v             = ort_.KernelContext_GetInput(context, 0);
     const OrtValue* input_thresholds    = ort_.KernelContext_GetInput(context, 1);
 
-    const auto *v = ort_.GetTensorData<double>(input_v);
-    const auto *thresholds = ort_.GetTensorData<double>(input_thresholds);
+    const auto *v = ort_.GetTensorData<float>(input_v);
+    const auto *thresholds = ort_.GetTensorData<float>(input_thresholds);
 
     // Setup output
     OrtTensorDimensions dimensions_v(ort_, input_v);
     OrtValue* output = ort_.KernelContext_GetOutput(context, 0, dimensions_v.data(), dimensions_v.size());
-    auto *out = ort_.GetTensorMutableData<double>(output);
+    auto *out = ort_.GetTensorMutableData<float>(output);
     OrtTensorTypeAndShapeInfo* output_info = ort_.GetTensorTypeAndShape(output);
     ort_.ReleaseTensorTypeAndShapeInfo(output_info);
 
