@@ -29,7 +29,7 @@
 
 import argparse
 import numpy as np
-import os
+import time, os
 from finn.core.datatype import DataType
 from driver_base import FINNExampleOverlay
 

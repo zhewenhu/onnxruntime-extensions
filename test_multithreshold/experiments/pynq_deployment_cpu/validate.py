@@ -1,5 +1,6 @@
 import onnxruntime as ort
 import numpy as np
+import time, os
 from onnxruntime_extensions import get_library_path
 from dataset_loading import mnist
 
@@ -19,6 +20,8 @@ sess = ort.InferenceSession("tfc_w1_a1_streamlined.onnx", so)
 inname = [input.name for input in sess.get_inputs()]
 outname = [output.name for output in sess.get_outputs()]
 
+start_time = time.time()
+
 for i in range(total):
     exp = test_labels[i]
 
@@ -30,5 +33,8 @@ for i in range(total):
     ok += exp == results
     nok += exp != results
 
+end_time = time.time()
+runtime = end_time - start_time
 acc = 100.0 * ok / (total)
-print("Final accuracy: %f" % acc)
+print("Accuracy: %f" % acc)
+print("Runtime (s): {}".format(runtime))

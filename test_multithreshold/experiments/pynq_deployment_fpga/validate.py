@@ -27,6 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import time
 from driver import io_shape_dict
 from driver_base import FINNExampleOverlay
 import numpy as np
@@ -93,6 +94,8 @@ if __name__ == "__main__":
     test_imgs = test_imgs.reshape(n_batches, bsize, -1)
     test_labels = test_labels.reshape(n_batches, bsize)
 
+    start_time = time.time()
+
     for i in range(n_batches):
         ibuf_normal = test_imgs[i].reshape(driver.ibuf_packed_device.shape)
         exp = test_labels[i]
@@ -105,5 +108,8 @@ if __name__ == "__main__":
         ok += ret[1]
         print("batch %d / %d : total OK %d NOK %d" % (i + 1, n_batches, ok, nok))
 
+    end_time = time.time()
+    runtime = end_time - start_time
     acc = 100.0 * ok / (total)
-    print("Final accuracy: %f" % acc)
+    print("Accuracy: %f" % acc)
+    print("Runtime (s): {}".format(runtime))
